@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Leaderboard System</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --danger: #ff5e6c;
+    --warn: #ffa94d;
+    --text: #e8eaf6;
+    --muted: #7b82a8;
+    --radius: 12px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  header .logo { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  header .sub  { font-size: 0.85rem; color: var(--muted); }
+
+  nav {
+    display: flex;
+    gap: 6px;
+    padding: 16px 32px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  nav button {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  nav button.active, nav button:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  main { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  h2 { font-size: 1.3rem; margin-bottom: 20px; color: var(--text); }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    font-family: var(--font);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+  select option { background: var(--surface2); }
+
+  .type-toggle {
+    display: flex;
+    gap: 8px;
+  }
+
+  .type-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  .type-btn.selected-credit { background: #1a3a2a; border-color: var(--accent2); color: var(--accent2); }
+  .type-btn.selected-debit  { background: #3a1a1a; border-color: var(--danger);  color: var(--danger);  }
+
+  .btn {
+    padding: 12px 28px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #5a52e0; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-sm {
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Alert */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .alert.show { display: block; }
+  .alert-success { background: #1a3a2a; border: 1px solid var(--accent2); color: var(--accent2); }
+  .alert-error   { background: #3a1a1a; border: 1px solid var(--danger);  color: var(--danger);  }
+  .alert-info    { background: #1a1f3a; border: 1px solid var(--accent);  color: var(--accent);  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-box .val { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+  .stat-box .lbl { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge-credit { background: #1a3a2a; color: var(--accent2); }
+  .badge-debit  { background: #3a1a1a; color: var(--danger);  }
+
+  .rank-medal { font-size: 1.2rem; }
+
+  /* Rank score bar */
+  .score-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .score-bar .bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .score-bar .bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  /* Search bar */
+  .search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .search-row input { flex: 1; }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+  }
+
+  .empty .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Idempotency hint */
+  .hint { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    nav { padding: 12px 16px; }
+    main { padding: 20px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">⚡ Leaderboard</div>
+    <div class="sub">Transaction Ranking System</div>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showPage('tx')">Post Transaction</button>
+  <button onclick="showPage('summary')">User Summary</button>
+  <button onclick="showPage('ranking')">Ranking</button>
+</nav>
+
+<main>
+
+  <!-- ── POST TRANSACTION ── -->
+  <div class="page active" id="page-tx">
+    <h2>Post a Transaction</h2>
+
+    <div class="card">
+      <div class="alert" id="tx-alert"></div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>User ID</label>
+          <input id="tx-userId" placeholder="e.g. user_123" />
+        </div>
+        <div class="form-group">
+          <label>Username</label>
+          <input id="tx-username" placeholder="e.g. rehan_k" />
+        </div>
+        <div class="form-group">
+          <label>Amount</label>
+          <input id="tx-amount" type="number" min="0.01" step="0.01" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label>Transaction Type</label>
+          <div class="type-toggle">
+            <button class="type-btn selected-credit" id="btn-credit" onclick="selectType('credit')">💰 Credit</button>
+            <button class="type-btn" id="btn-debit" onclick="selectType('debit')">💸 Debit</button>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Note (optional)</label>
+          <input id="tx-note" placeholder="e.g. monthly salary, subscription fee" maxlength="500" />
+        </div>
+        <div class="form-group full">
+          <label>Idempotency Key (optional)</label>
+          <input id="tx-idem" placeholder="Leave blank to auto-generate" />
+          <div class="hint">Resend the same key to safely retry — duplicate requests won't double-process.</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:20px; align-items:center;">
+        <button class="btn btn-primary" id="tx-submit" onclick="submitTransaction()">Submit Transaction</button>
+        <button class="btn-sm" onclick="fillDemo()">Fill Demo Data</button>
+        <button class="btn-sm" onclick="generateIdemKey()">Generate Key</button>
+      </div>
+    </div>
+
+    <div class="card" id="tx-result-card" style="display:none;">
+      <h2>Transaction Result</h2>
+      <pre id="tx-result" style="font-size:0.85rem; color: var(--accent2); white-space:pre-wrap;"></pre>
+    </div>
+  </div>
+
+  <!-- ── SUMMARY ── -->
+  <div class="page" id="page-summary">
+    <h2>User Summary</h2>
+
+    <div class="search-row">
+      <input id="sum-userId" placeholder="Enter User ID (e.g. user_123)" onkeydown="if(event.key==='Enter') fetchSummary()" />
+      <button class="btn btn-primary" onclick="fetchSummary()">Lookup</button>
+    </div>
+
+    <div class="alert" id="sum-alert"></div>
+    <div id="sum-content" style="display:none;">
+      <div class="stats-row">
+        <div class="stat-box"><div class="val" id="s-balance">-</div><div class="lbl">Net Balance</div></div>
+        <div class="stat-box"><div class="val" id="s-credits">-</div><div class="lbl">Total Credits</div></div>
+        <div class="stat-box"><div class="val" id="s-debits">-</div><div class="lbl">Total Debits</div></div>
+        <div class="stat-box"><div class="val" id="s-score">-</div><div class="lbl">Rank Score</div></div>
+      </div>
+
+      <div class="card">
+        <h2 id="s-username">Transactions</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tx ID</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Note</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="sum-tx-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RANKING ── -->
+  <div class="page" id="page-ranking">
+    <h2>Global Ranking</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div class="hint" style="font-size:0.82rem;">
+        Score = (Balance × 0.60) + (Tx Count × 10 × 0.30) + (Recency Bonus × 0.10)
+      </div>
+      <button class="btn-sm" onclick="fetchRanking()">🔄 Refresh</button>
+    </div>
+
+    <div class="alert" id="rank-alert"></div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>User</th>
+              <th>Net Balance</th>
+              <th>Tx Count</th>
+              <th>Score</th>
+              <th>Last Active</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rank-body">
+            <tr><td colspan="7"><div class="empty"><div class="icon">🏆</div>No data yet</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const API = "";  // same origin; change to "http://localhost:8080" for local dev
+
+  let selectedType = "credit";
+
+  // ── Nav ──────────────────────────────────────────────────────────
+  function showPage(name) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    document.getElementById("page-" + name).classList.add("active");
+    event.target.classList.add("active");
+    if (name === "ranking") fetchRanking();
+  }
+
+  // ── Type toggle ──────────────────────────────────────────────────
+  function selectType(type) {
+    selectedType = type;
+    document.getElementById("btn-credit").className = "type-btn" + (type === "credit" ? " selected-credit" : "");
+    document.getElementById("btn-debit").className  = "type-btn" + (type === "debit"  ? " selected-debit"  : "");
+  }
+
+  // ── Alert helper ─────────────────────────────────────────────────
+  function showAlert(id, type, msg) {
+    const el = document.getElementById(id);
+    el.className = `alert alert-${type} show`;
+    el.innerHTML = msg;
+  }
+  function clearAlert(id) {
+    const el = document.getElementById(id);
+    el.className = "alert";
+    el.innerHTML = "";
+  }
+
+  // ── Demo fill ────────────────────────────────────────────────────
+  function fillDemo() {
+    const users = [
+      { id: "user_001", name: "rehan_k"   },
+      { id: "user_002", name: "mohsin_a"  },
+      { id: "user_003", name: "saif_k"    },
+    ];
+    const u = users[Math.floor(Math.random() * users.length)];
+    document.getElementById("tx-userId").value   = u.id;
+    document.getElementById("tx-username").value = u.name;
+    document.getElementById("tx-amount").value   = (Math.random() * 500 + 50).toFixed(2);
+    document.getElementById("tx-note").value     = "Demo transaction";
+    selectType(Math.random() > 0.3 ? "credit" : "debit");
+  }
+
+  function generateIdemKey() {
+    document.getElementById("tx-idem").value = "idem-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  // ── POST /transaction ────────────────────────────────────────────
+  async function submitTransaction() {
+    clearAlert("tx-alert");
+    const btn = document.getElementById("tx-submit");
+
+    const userId   = document.getElementById("tx-userId").value.trim();
+    const username = document.getElementById("tx-username").value.trim();
+    const amount   = parseFloat(document.getElementById("tx-amount").value);
+    const note     = document.getElementById("tx-note").value.trim();
+    const idemKey  = document.getElementById("tx-idem").value.trim();
+
+    // Client-side validation
+    if (!userId)          return showAlert("tx-alert", "error", "User ID is required");
+    if (!username)        return showAlert("tx-alert", "error", "Username is required");
+    if (!amount || amount <= 0) return showAlert("tx-alert", "error", "Amount must be greater than 0");
+    if (amount > 1000000) return showAlert("tx-alert", "error", "Amount cannot exceed 1,000,000");
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Processing…';
+
+    const headers = { "Content-Type": "application/json" };
+    if (idemKey) headers["X-Idempotency-Key"] = idemKey;
+
+    try {
+      const res = await fetch(`${API}/transaction`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ userId, username, amount, type: selectedType, note }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        const isDup = data.duplicate ? " (duplicate — cached result returned)" : "";
+        showAlert("tx-alert", "success", `✅ Transaction recorded${isDup}`);
+        document.getElementById("tx-result-card").style.display = "block";
+        document.getElementById("tx-result").textContent = JSON.stringify(data.transaction, null, 2);
+      } else {
+        const detail = data.details ? "<br><small>" + data.details.join(", ") + "</small>" : "";
+        showAlert("tx-alert", "error", `❌ ${data.error}${detail}`);
+        document.getElementById("tx-result-card").style.display = "none";
+      }
+    } catch (e) {
+      showAlert("tx-alert", "error", "Network error: " + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "Submit Transaction";
+    }
+  }
+
+  // ── GET /summary/:userId ─────────────────────────────────────────
+  async function fetchSummary() {
+    clearAlert("sum-alert");
+    const userId = document.getElementById("sum-userId").value.trim();
+    if (!userId) return showAlert("sum-alert", "error", "Please enter a User ID");
+
+    try {
+      const res  = await fetch(`${API}/summary/${encodeURIComponent(userId)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById("sum-content").style.display = "none";
+        return showAlert("sum-alert", "error", `❌ ${data.error}`);
+      }
+
+      document.getElementById("sum-content").style.display = "block";
+      document.getElementById("s-username").textContent = `Transactions — ${data.user.username}`;
+      document.getElementById("s-balance").textContent  = "$" + data.summary.netBalance.toLocaleString();
+      document.getElementById("s-credits").textContent  = "$" + data.summary.totalCredits.toLocaleString();
+      document.getElementById("s-debits").textContent   = "$" + data.summary.totalDebits.toLocaleString();
+      document.getElementById("s-score").textContent    = data.summary.rankScore.toFixed(1);
+
+      const tbody = document.getElementById("sum-tx-body");
+      tbody.innerHTML = "";
+      if (!data.transactions.length) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="icon">📭</div>No transactions</div></td></tr>`;
+        return;
+      }
+      data.transactions.forEach(tx => {
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-family:monospace; font-size:0.78rem; color:var(--muted)">${tx.txId.slice(0,8)}…</td>
+            <td><span class="badge badge-${tx.type}">${tx.type}</span></td>
+            <td style="color:${tx.type==='credit'?'var(--accent2)':'var(--danger)'}">
+              ${tx.type==='credit'?'+':'-'}$${tx.amount.toLocaleString()}
+            </td>
+            <td style="color:var(--muted)">${tx.note || '—'}</td>
+            <td style="color:var(--muted)">${new Date(tx.createdAt * 1000).toLocaleString()}</td>
+          </tr>`;
+      });
+    } catch (e) {
+      showAlert("sum-alert", "error", "Network error: " + e.message);
+    }
+  }
+
+  // ── GET /ranking ─────────────────────────────────────────────────
+  async function fetchRanking() {
+    clearAlert("rank-alert");
+    const tbody = document.getElementById("rank-body");
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted)"><span class="spinner"></span> Loading…</td></tr>`;
+
+    try {
+      const res  = await fetch(`${API}/ranking?limit=50`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty">Error loading ranking</div></td></tr>`;
+        return showAlert("rank-alert", "error", data.error);
+      }
+
+      if (!data.ranking.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="icon">🏆</div>No users yet — post a transaction to appear here!</div></td></tr>`;
+        return;
+      }
+
+      const maxScore = data.ranking[0].rankScore || 1;
+
+      tbody.innerHTML = "";
+      data.ranking.forEach(u => {
+        const medal   = u.rank === 1 ? "🥇" : u.rank === 2 ? "🥈" : u.rank === 3 ? "🥉" : `#${u.rank}`;
+        const pct     = Math.round((u.rankScore / maxScore) * 100);
+        const lastAct = u.lastTxAt
+          ? timeSince(u.lastTxAt)
+          : "—";
+
+        tbody.innerHTML += `
+          <tr>
+            <td><span class="rank-medal">${medal}</span></td>
+            <td>
+              <div style="font-weight:600">${esc(u.username)}</div>
+              <div style="font-size:0.75rem; color:var(--muted)">${esc(u.userId)}</div>
+            </td>
+            <td style="color:var(--accent2)">$${u.totalAmount.toLocaleString()}</td>
+            <td>${u.txCount}</td>
+            <td>
+              <div class="score-bar">
+                <span style="font-size:0.85rem; min-width:42px">${u.rankScore.toFixed(1)}</span>
+                <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+              </div>
+            </td>
+            <td style="color:var(--muted); font-size:0.82rem">${lastAct}</td>
+            <td>
+              <button class="btn-sm" onclick="lookupUser('${esc(u.userId)}')">View</button>
+            </td>
+          </tr>`;
+      });
+    } catch (e) {
+      showAlert("rank-alert", "error", "Network error: " + e.message);
+    }
+  }
+
+  function lookupUser(userId) {
+    document.getElementById("sum-userId").value = userId;
+    showPage("summary");
+    document.querySelectorAll("nav button")[1].classList.add("active");
+    document.querySelectorAll("nav button")[2].classList.remove("active");
+    fetchSummary();
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function timeSince(ts) {
+    const sec = Math.floor(Date.now() / 1000 - ts);
+    if (sec < 60)   return sec + "s ago";
+    if (sec < 3600) return Math.floor(sec / 60) + "m ago";
+    if (sec < 86400) return Math.floor(sec / 3600) + "h ago";
+    return Math.floor(sec / 86400) + "d ago";
+  }
+
+  // Auto-load ranking on page load
+  fetchRanking();
+</script>
+</body>
+</html>
