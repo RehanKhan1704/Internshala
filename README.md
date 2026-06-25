@@ -137,7 +137,7 @@ This rewards three things:
 
 ### 6. Auto User Creation
 Users are created automatically on first transaction — no separate
-/register endpoint needed. This matches the stated API surface.
+/register endpoint needed.
 
 ---
 
