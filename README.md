@@ -12,7 +12,7 @@ duplicate prevention, concurrency safety, and multi-factor ranking.
 | Backend    | Python 3.11, Flask 3.0              |
 | Database   | SQLite via SQLAlchemy (swap-ready)  |
 | Frontend   | Vanilla HTML/CSS/JS (served by Flask) |
-| Deploy     | Render / Railway / Heroku           |
+| Deploy     | Render           |
 
 ---
 
